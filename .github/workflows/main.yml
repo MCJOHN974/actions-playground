@@ -51,7 +51,7 @@ jobs:
         id: wait-for-ci
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: CI # Replace with your CI job names
+          checkName: build
           ref: ${{ github.event.pull_request.head.sha }}
 
       # Ensure all checks are successful
