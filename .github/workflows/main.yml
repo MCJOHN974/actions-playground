@@ -40,14 +40,14 @@ jobs:
             runs-on: ubuntu-latest
             if: github.event_name == 'pull_request'
             steps:
-              - name: Checkout main branch
+              - name: Checkout master branch
                 uses: actions/checkout@v2
                 with:
-                  ref: main
-                  path: main_repo
+                  ref: master
+                  path: master_repo
         
-              - name: Save main version of state.csv
-                run: cp main_repo/state.csv state-main.csv
+              - name: Save master version of state.csv
+                run: cp master_repo/state.csv state-master.csv
         
               - name: Checkout PR branch
                 uses: actions/checkout@v2
@@ -74,17 +74,17 @@ jobs:
                     exit 1
                   fi
         
-              # Compare state.csv in PR and main branch, and post comment
+              # Compare state.csv in PR and master branch, and post comment
               - name: Compare state.csv and Post Comment
                 env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 run: |
-                  # Diff between state.csv in main and in PR
-                  DIFF=$(diff -u state-main.csv state-pr.csv) || true
+                  # Diff between state.csv in master and in PR
+                  DIFF=$(diff -u state-master.csv state-pr.csv) || true
         
                   # Check if there is a difference
                   if [ -z "$DIFF" ]; then
                     echo "No differences found."
                   else
                     # Posting the diff as a comment
-                    echo "$DIFF" | gh pr comment ${{ github.event.pull_request.number }} --body "Diff between \`state.csv\` in main and PR:\n\`\`\`\n$DIFF\n\`\`\`"
+                    echo "$DIFF" | gh pr comment ${{ github.event.pull_request.number }} --body "Diff between \`state.csv\` in master and PR:\n\`\`\`\n$DIFF\n\`\`\`"
