@@ -37,58 +37,54 @@ jobs:
 
 
   check-diff:
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.head_ref }}
-
-      - name: Save PR version of state.csv
-        run: mv state.csv state-pr.csv
-
-      - name: Checkout master branch without switching directory
-        uses: actions/checkout@v2
-        with:
-          ref: master
-          path: master_repo
-          fetch-depth: 0
-
-      - name: Get master branch version of state.csv
-        run: cp master_repo/state.csv state-master.csv
-
-      # Wait for all 'status' checks to complete
-      - name: Wait for CI
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        id: wait-for-ci
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: build # Replace with your CI job names
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      # Ensure all checks are successful
-      - name: Verify CI success
-        run: |
-          if [ "${{ steps.wait-for-ci.outputs.conclusion }}" != "success" ]; then
-            echo "CI checks failed"
-            exit 1
-          fi
-
-       # Compare state.csv in PR and main branch, and post comment
-      - name: Compare state.csv and Post Comment
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Diff between state.csv in main and in PR
-          DIFF=$(diff -u state-main.csv state-pr.csv) || true
-
-          # Check if there is a difference
-          if [ -z "$DIFF" ]; then
-            echo "No differences found."
-          else
-            # Posting the diff as a comment
-            echo "$DIFF" | gh pr comment ${{ github.event.pull_request.number }} --body "Diff between \`state.csv\` in main and PR:\n\`\`\`\n$DIFF\n\`\`\`"
-          fi
+            runs-on: ubuntu-latest
+            if: github.event_name == 'pull_request'
+            steps:
+              - name: Checkout main branch
+                uses: actions/checkout@v2
+                with:
+                  ref: main
+                  path: main_repo
+        
+              - name: Save main version of state.csv
+                run: cp main_repo/state.csv state-main.csv
+        
+              - name: Checkout PR branch
+                uses: actions/checkout@v2
+                with:
+                  ref: ${{ github.head_ref }}
+        
+              - name: Save PR version of state.csv
+                run: mv state.csv state-pr.csv
+        
+              # Wait for all 'status' checks to complete
+              - name: Wait for CI
+                uses: fountainhead/action-wait-for-check@v1.0.0
+                id: wait-for-ci
+                with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  checkName: CI # Replace with your CI job names
+                  ref: ${{ github.event.pull_request.head.sha }}
+        
+              # Ensure all checks are successful
+              - name: Verify CI success
+                run: |
+                  if [ "${{ steps.wait-for-ci.outputs.conclusion }}" != "success" ]; then
+                    echo "CI checks failed"
+                    exit 1
+                  fi
+        
+              # Compare state.csv in PR and main branch, and post comment
+              - name: Compare state.csv and Post Comment
+                env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                run: |
+                  # Diff between state.csv in main and in PR
+                  DIFF=$(diff -u state-main.csv state-pr.csv) || true
+        
+                  # Check if there is a difference
+                  if [ -z "$DIFF" ]; then
+                    echo "No differences found."
+                  else
+                    # Posting the diff as a comment
+                    echo "$DIFF" | gh pr comment ${{ github.event.pull_request.number }} --body "Diff between \`state.csv\` in main and PR:\n\`\`\`\n$DIFF\n\`\`\`"
